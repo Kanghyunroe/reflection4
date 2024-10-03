@@ -1,0 +1,116 @@
+---
+title: "Reflection 4"
+author: 
+  - Kevin Roe, Cher Ning-Li, Fangning Zhang, Jierui Zhan, Jingchuan Xu
+thanks: "All data, R code, and other files are available in the following GitHub repository: <https://github.com/Kanghyunroe/reflection4>"
+date: today
+date-format: long
+format: pdf
+toc: true
+number-sections: true
+---
+
+
+```{r}
+#| include: false
+#| warning: false
+#| message: false
+
+#### Loading packages ####
+#install.packages("dplyr")
+#install.packages("tidyverse")
+#install.packages("knitr")
+
+library(dplyr)
+library(tidyverse)
+library(knitr)
+
+ipums_data <- read_csv("usa_00002.csv")
+
+```
+
+## How to Obtain the Data {#sec-dataoverview}
+
+After creating the an IPUMS USA account, you first go to the Get Data button on the home page. Then you want to Select Samples and only select ACS 2022 option and deselect all other default options and you submit your sample selection. Under Select Harmonized Variables and Geographic, select STATEICP. Under Demographic choose SEX, EDUC, EDUCD. You then go under View Cart and create a data extract and make sure to create the data extract as a csv. Once you're able to, download and unzip the data. 
+
+Unzip the data and look for a file called "usa_00002.csv". Load the file in the quarto document and work off the document. 
+
+## Overview of Ratio Estimators Approach {#sec-estimators}
+
+The ratio estimators approach first assumes the number of respondents in California then finds the percentage of respondents with a doctorate. Using this ratio, assuming that all states ahve the same percentage of doctorates, we divide the number of doctorates by the ratio to find the estimated number of respondents for each state. 
+
+## Estimates and Actual Number of Respondents (#sec-estimates)
+
+Please find results under @sec-code
+
+## Explanation for Difference {#sec-explanation}
+
+The reason why there is a difference is because the Ratio Estimators Approach assumes that the percentage of doctorates across all 50 states equals the percentage of doctorates in California. California, a highly educated state, is not a good representation of the entire population in terms of the proportion of doctorates. With many research universities and start-ups the proportion of doctorates in California does not represent the entire population. Therefore, because we use the California proportion for all states, it is not a good representation and there will be discrepancies. 
+
+
+## Code Output {#sec-code}
+
+```{r}
+#| echo: false
+#| warning: false
+
+#### Respondents in Each State with Doctoral Degree ####
+
+doctoral_degree_code <- 116 
+
+doctoral_data <- ipums_data %>%
+  filter(EDUCD == doctoral_degree_code)
+
+state_doctoral_counts <- doctoral_data %>%
+  group_by(STATEICP) %>%
+  summarise(doctoral_count = n()) %>%
+  as_tibble()
+
+state_doctoral_counts %>%
+  kable(col.names = c("State Code","Number of Doctorates"))
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+
+#### Estimated Total Number of Respondents ####
+
+california_total_respondents <- 391171
+
+california_doctoral_count <- state_doctoral_counts %>%
+  filter(STATEICP == 71) %>%
+  pull(doctoral_count)
+
+ratio_california <- california_doctoral_count / california_total_respondents
+
+state_estimates <- state_doctoral_counts %>%
+  mutate(estimated_total_respondents = doctoral_count / ratio_california)
+
+state_estimates %>%
+  kable(col.names = c("State Code","Number of Doctorates", "Estimated Total"))
+
+```
+
+```{r}
+#| echo: false
+#| warning: false
+
+#### Comparison Between Estimate and After ####
+
+actual_respondents <- ipums_data %>%
+  group_by(STATEICP) %>%
+  summarise(actual_total_respondents = n()) %>%
+  as_tibble()
+
+comparison <- state_estimates %>%
+  left_join(actual_respondents, by = "STATEICP") %>%
+  mutate(difference = actual_total_respondents - estimated_total_respondents)
+
+comparison %>%
+  kable(col.names = c("State Code","Number of Doctorates", 
+                      "Estimated Respondents", "Actual Respondents", 
+                      "Difference"))
+```
+
