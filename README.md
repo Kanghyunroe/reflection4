@@ -21,7 +21,7 @@ The repository is structured as follows:
 - **`paper`**: Contains the Quarto document (`paper.qmd`), the compiled PDF (`paper.pdf`), and the bibliography file (`references.bib`) used for the research paper.
 - **`data`**:
   - `usa_00002.csv`: The raw dataset extracted from IPUMS USA (not uploaded).
-- **`reflection4.Rproj`**: The R project file for replicating the analysis.
+- **`us-postdocs.Rproj`**: The R project file for replicating the analysis.
 
 ## Statement on LLM Usage
 
